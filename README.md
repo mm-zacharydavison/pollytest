@@ -1,0 +1,55 @@
+# @zdavison/pollytest
+
+Batteries included HAR snapshot testing with [polly.js](https://netflix.github.io/pollyjs/#/).
+
+## Install
+
+```bash
+npm install -D @zdavison/pollytest
+pnpm add -D @zdavison/pollytest
+bun add -d @zdavison/pollytest
+```
+
+## Usage
+
+```typescript
+import { createPollyTest } from '@zdavison/pollytest';
+import { expect } from 'bun:test';
+
+// Configure pollyTest (you can share this globally if you like)
+const pollyTest = createPollyTest({
+  recordingsDir: 'tests/fixtures/recordings',                                   // network recordings [relative to git root]
+  snapshotsDir: 'tests/fixtures/snapshots',                                     // your snapshots [relative to git root]
+  headersToRedact: ['x-custom-auth'],                                           // [optional] redacted headers won't be stored (use for API keys)
+  bodyNormalizer: (body) => body.replace(/"timestamp":\d+/g, '"timestamp":0'),  // [optional] normalize timestamps and other fields that always change
+});
+
+pollyTest('fetches user', async ({ snapshot }) => {
+  const response = await fetch('https://api.example.com/users/1');
+  const user = await response.json();
+
+  expect(user.name).toBeDefined();
+  await snapshot({ user });                                                     // saves in record mode, compares against recording in recorded mode
+});
+```
+
+## Running Tests
+
+Use the CLI (auto-detects package manager from lock file):
+
+```bash
+bun pollytest                       # interactive mode
+bun pollytest --real                # record mode (hits real APIs)
+bun pollytest --recorded            # replay mode (uses recordings)
+bun pollytest 'pnpm test' --real    # custom test command (interactive mode)
+```
+
+Or set `REAL_APIS=true` manually:
+
+```bash
+REAL_APIS=true npm test
+```
+
+## License
+
+MIT
