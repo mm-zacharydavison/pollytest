@@ -23,9 +23,12 @@ import { expect } from 'bun:test';
 
 // Configure pollyTest (you can share this globally if you like)
 const pollyTest = createPollyTest({
-  recordingsDir: 'tests/fixtures/recordings',                                   // recordings and snapshots [relative to git root]
-  headersToRedact: ['x-custom-auth'],                                           // [optional] redacted headers won't be stored (use for API keys)
-  bodyNormalizer: (body) => body.replace(/"timestamp":\d+/g, '"timestamp":0'),  // [optional] normalize timestamps and other fields that always change
+  // recordings and snapshots [relative to git root]
+  recordingsDir: 'tests/fixtures/recordings',
+  // [optional] redacted headers won't be stored (use for API keys)                       
+  headersToRedact: ['x-custom-auth'],
+  // [optional] normalize timestamps and other fields that always change
+  bodyNormalizer: (body) => body.replace(/"timestamp":\d+/g, '"timestamp":0'),
 });
 
 pollyTest('fetches user', async ({ snapshot }) => {
@@ -33,7 +36,8 @@ pollyTest('fetches user', async ({ snapshot }) => {
   const user = await response.json();
 
   expect(user.name).toBeDefined();
-  await snapshot({ user });                                                     // saves in record mode, compares against recording in recorded mode
+  // saves in record mode, compares against recording in recorded mode
+  await snapshot({ user });
 });
 ```
 
@@ -45,7 +49,7 @@ Use the CLI (auto-detects package manager from lock file):
 bun pollytest                       # interactive mode
 bun pollytest --real                # record mode (hits real APIs)
 bun pollytest --recorded            # replay mode (uses recordings)
-bun pollytest 'pnpm test' --real    # custom test command (interactive mode)
+bun pollytest 'pnpm test' --real    # custom test command
 ```
 
 Or set `REAL_APIS=true` manually:
