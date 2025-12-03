@@ -12,7 +12,6 @@ import { createPollyTest } from '../src';
 
 const pollyTest = createPollyTest({
   recordingsDir: 'examples/fixtures/recordings',
-  snapshotsDir: 'examples/fixtures/snapshots',
 
   // Redact sensitive headers from recordings
   // These are common auth headers - customize for your API

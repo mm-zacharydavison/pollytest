@@ -43,14 +43,10 @@ export interface PollyTestContext {
 
 export interface PollyTestOptions {
   /**
-   * Directory for HTTP recordings (relative to git root).
+   * Directory for recordings and snapshots.
+   * Relative to git root.
    */
   recordingsDir: string;
-
-  /**
-   * Directory for snapshots (relative to git root).
-   */
-  snapshotsDir: string;
 
   /**
    * Headers to redact from recordings.
@@ -83,7 +79,8 @@ function slugify(text: string): string {
 
 /**
  * Extracts the test suite name from the calling test file.
- * Looks for .test.ts or .integration.test.ts files in the stack trace.
+ * Keeps the full filename minus the final extension (ts/tsx/js/jsx).
+ * Example: "simple-chat.integration.test.ts" -> "simple-chat.integration.test"
  */
 function getTestSuiteName(): string {
   const error = new Error();
@@ -91,8 +88,8 @@ function getTestSuiteName(): string {
 
   const lines = stack.split('\n');
   for (const line of lines) {
-    // Match common test file patterns
-    const match = line.match(/([^/\\]+)\.(?:integration\.)?(?:spec\.)?test\.ts/);
+    // Match test files (*.test.ts, *.spec.ts, etc.) and capture the full name without extension
+    const match = line.match(/([^/\\]+\.(?:test|spec))\.(ts|tsx|js|jsx)(?::|$|\))/);
     if (match) {
       return match[1];
     }
@@ -108,7 +105,6 @@ function getTestSuiteName(): string {
  * ```typescript
  * const pollyTest = createPollyTest({
  *   recordingsDir: 'tests/fixtures/recordings',
- *   snapshotsDir: 'tests/fixtures/snapshots',
  * });
  *
  * pollyTest('my test', async ({ snapshot }) => {
@@ -119,10 +115,9 @@ function getTestSuiteName(): string {
 export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptions'>) {
   const gitRoot = getGitRoot();
   const recordingsDir = join(gitRoot, globalOptions.recordingsDir);
-  const snapshotsDir = join(gitRoot, globalOptions.snapshotsDir);
 
-  // Configure snapshot manager
-  snapshotManager = new SnapshotManager({ baseDir: snapshotsDir });
+  // Configure snapshot manager - uses same directory as recordings
+  snapshotManager = new SnapshotManager({ baseDir: recordingsDir });
 
   /**
    * Test function that automatically sets up and tears down Polly.js network recording.
@@ -190,17 +185,19 @@ export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptio
         await recorder.start();
 
         const isRealMode = recorder.isRealMode();
+        // Use the recording ID (with hash) for snapshots to match recording directory names
+        const snapshotName = recorder.getRecordingId() ?? recordingName;
 
         const context: PollyTestContext = {
           isRealMode,
           recordingName,
           snapshot: async (data: unknown) => {
             if (isRealMode) {
-              await snapshotManager.save(recordingName, data);
+              await snapshotManager.save(snapshotName, data);
             }
           },
           loadSnapshot: async <T = unknown>() => {
-            return snapshotManager.load<T>(recordingName);
+            return snapshotManager.load<T>(snapshotName);
           },
         };
 
@@ -268,17 +265,19 @@ export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptio
         await recorder.start();
 
         const isRealMode = recorder.isRealMode();
+        // Use the recording ID (with hash) for snapshots to match recording directory names
+        const snapshotName = recorder.getRecordingId() ?? recordingName;
 
         const context: PollyTestContext = {
           isRealMode,
           recordingName,
           snapshot: async (data: unknown) => {
             if (isRealMode) {
-              await snapshotManager.save(recordingName, data);
+              await snapshotManager.save(snapshotName, data);
             }
           },
           loadSnapshot: async <T = unknown>() => {
-            return snapshotManager.load<T>(recordingName);
+            return snapshotManager.load<T>(snapshotName);
           },
         };
 

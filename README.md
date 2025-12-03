@@ -2,6 +2,11 @@
 
 Batteries included HAR snapshot testing with [polly.js](https://netflix.github.io/pollyjs/#/).
 
+tl;dr:
+1. Run tests against real APIs.
+2. Network traffic is saved.
+3. Future test runs use the saved traffic.
+
 ## Install
 
 ```bash
@@ -18,8 +23,7 @@ import { expect } from 'bun:test';
 
 // Configure pollyTest (you can share this globally if you like)
 const pollyTest = createPollyTest({
-  recordingsDir: 'tests/fixtures/recordings',                                   // network recordings [relative to git root]
-  snapshotsDir: 'tests/fixtures/snapshots',                                     // your snapshots [relative to git root]
+  recordingsDir: 'tests/fixtures/recordings',                                   // recordings and snapshots [relative to git root]
   headersToRedact: ['x-custom-auth'],                                           // [optional] redacted headers won't be stored (use for API keys)
   bodyNormalizer: (body) => body.replace(/"timestamp":\d+/g, '"timestamp":0'),  // [optional] normalize timestamps and other fields that always change
 });

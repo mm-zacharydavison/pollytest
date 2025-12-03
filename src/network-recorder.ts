@@ -199,6 +199,14 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
     isRealMode() {
       return isRealMode;
     },
+
+    /**
+     * Get the recording ID (includes hash suffix).
+     * Only available after start() is called.
+     */
+    getRecordingId() {
+      return polly?.recordingId ?? null;
+    },
   };
 }
 

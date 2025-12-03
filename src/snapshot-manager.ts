@@ -42,7 +42,7 @@ export class SnapshotManager {
    * Returns null if the snapshot doesn't exist.
    */
   async load<T = unknown>(name: string): Promise<T | null> {
-    const path = join(this.baseDir, `${name}.json`);
+    const path = join(this.baseDir, name, 'snapshot.json');
 
     if (!existsSync(path)) {
       return null;
@@ -57,7 +57,7 @@ export class SnapshotManager {
    * Creates parent directories if needed.
    */
   async save(name: string, data: unknown): Promise<void> {
-    const path = join(this.baseDir, `${name}.json`);
+    const path = join(this.baseDir, name, 'snapshot.json');
     await mkdir(dirname(path), { recursive: true });
 
     const content = JSON.stringify(data, null, 2);
@@ -68,7 +68,7 @@ export class SnapshotManager {
    * Check if a snapshot exists.
    */
   has(name: string): boolean {
-    const path = join(this.baseDir, `${name}.json`);
+    const path = join(this.baseDir, name, 'snapshot.json');
     return existsSync(path);
   }
 
@@ -76,7 +76,7 @@ export class SnapshotManager {
    * Delete a snapshot file.
    */
   async delete(name: string): Promise<void> {
-    const path = join(this.baseDir, `${name}.json`);
+    const path = join(this.baseDir, name, 'snapshot.json');
     if (existsSync(path)) {
       const { unlink } = await import('node:fs/promises');
       await unlink(path);
