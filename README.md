@@ -31,6 +31,7 @@ const pollyTest = createPollyTest({
   bodyNormalizer: (body) => body.replace(/"timestamp":\d+/g, '"timestamp":0'),
 });
 
+// use `pollyTest` instead of your usual `test` function.
 pollyTest('fetches user', async ({ snapshot }) => {
   const response = await fetch('https://api.example.com/users/1');
   const user = await response.json();
