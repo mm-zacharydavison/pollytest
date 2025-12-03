@@ -1,4 +1,4 @@
-# @zdavison/pollytest
+# pollytest
 
 Batteries included HAR snapshot testing with [polly.js](https://netflix.github.io/pollyjs/#/).
 

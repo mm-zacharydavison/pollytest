@@ -38,6 +38,13 @@
   ],
   "author": "",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mm-zacharydavison/pollytest.git"
+  },
   "dependencies": {
     "@pollyjs/adapter-fetch": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
