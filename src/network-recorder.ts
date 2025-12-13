@@ -6,7 +6,6 @@ import { join } from 'node:path';
 // Extend PollyConfig to include properties missing from types
 interface ExtendedPollyConfig extends PollyConfig {
   recordingId?: string;
-  logging?: number;
 }
 
 // Register adapters once on module load
@@ -128,7 +127,7 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
     async start() {
       const config: ExtendedPollyConfig = {
         mode,
-        logging: process.env.AGENT === '1' || process.env.QUIET === '1' ? 0 : 3,
+        logLevel: process.env.AGENT === '1' || process.env.QUIET === '1' ? 'silent' : 'warn',
         adapters: ['fetch'],
         persister: 'fs',
         persisterOptions: {
