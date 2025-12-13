@@ -3,9 +3,10 @@ import FetchAdapter from '@pollyjs/adapter-fetch';
 import FSPersister from '@pollyjs/persister-fs';
 import { join } from 'node:path';
 
-// Extend PollyConfig to include recordingId (missing from types)
+// Extend PollyConfig to include properties missing from types
 interface ExtendedPollyConfig extends PollyConfig {
   recordingId?: string;
+  logging?: number;
 }
 
 // Register adapters once on module load
