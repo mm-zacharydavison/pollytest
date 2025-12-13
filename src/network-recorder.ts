@@ -127,6 +127,7 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
     async start() {
       const config: ExtendedPollyConfig = {
         mode,
+        logging: process.env.AGENT === '1' || process.env.QUIET === '1' ? 0 : 3,
         adapters: ['fetch'],
         persister: 'fs',
         persisterOptions: {

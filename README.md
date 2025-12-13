@@ -59,6 +59,14 @@ Or set `REAL_APIS=true` manually:
 REAL_APIS=true npm test
 ```
 
+# `AGENT=1` & `QUIET=1`
+
+By default, `polly` log level is quite noisy, which can be unfriendly to AI agents.
+
+`AGENT=1` will produce quieter output.
+
+To be more explicit, `QUIET=1` will produce the same quiet output.
+
 ## License
 
 MIT
