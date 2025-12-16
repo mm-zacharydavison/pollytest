@@ -42,6 +42,58 @@ pollyTest('fetches user', async ({ snapshot }) => {
 });
 ```
 
+## Time Control
+
+Time control freezes `Date.now()` and related APIs to the recording time during replay, enabling deterministic testing of time-dependent features.
+
+```typescript
+const pollyTest = createPollyTest({
+  recordingsDir: 'tests/fixtures/recordings',
+  timeControl: true,
+});
+
+pollyTest('token expiration', async ({ time, isRealMode }) => {
+  const { token, expiresAt } = await fetchToken();
+
+  // In replay mode, time is frozen to recording time
+  // In real mode, time is null (real Date.now() is used)
+  if (time) {
+    console.log('Current time:', time.now().toISOString());
+
+    // Token should be valid initially
+    expect(isExpired(token, expiresAt)).toBe(false);
+
+    // Advance time by 2 hours
+    await time.advance('2 hours');
+
+    // Token should now be expired
+    expect(isExpired(token, expiresAt)).toBe(true);
+  }
+});
+```
+
+### Time Context API
+
+| Method              | Description                                             |
+|---------------------|---------------------------------------------------------|
+| `time.now()`        | Current controlled time as a `Date` object              |
+| `time.nowMs()`      | Current controlled time as milliseconds since epoch     |
+| `time.advance(dur)` | Advance time, executing scheduled timers along the way  |
+| `time.tick(dur)`    | Alias for `advance()`                                   |
+| `time.flush()`      | Process all pending timers and microtasks               |
+| `time.elapsed()`    | Milliseconds elapsed since test started                 |
+
+Durations can be milliseconds or human-readable strings: `'1 hour'`, `'30 minutes'`, `'5 seconds'`, `'500 ms'`.
+
+### How It Works
+
+| Mode          | Behavior                                                    |
+|---------------|-------------------------------------------------------------|
+| Real APIs     | `time` is `null`, real `Date.now()` is used                 |
+| Replay        | `time` is available, frozen to HAR entry's `startedDateTime`|
+
+Time control uses [@sinonjs/fake-timers](https://github.com/sinonjs/fake-timers) under the hood, the same library that powers Jest and Vitest fake timers.
+
 ## Running Tests
 
 Use the CLI (auto-detects package manager from lock file):
