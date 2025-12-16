@@ -3,6 +3,7 @@ import { execSync } from 'node:child_process';
 import { join } from 'node:path';
 import { setupNetworkRecorder, type NetworkRecorderOptions } from './network-recorder';
 import { SnapshotManager } from './snapshot-manager';
+import type { TimeContext, TimeControlConfig } from './time-controller';
 
 /**
  * Get the git root directory.
@@ -39,6 +40,12 @@ export interface PollyTestContext {
    * The recording name for this test.
    */
   recordingName: string;
+
+  /**
+   * Time control context. Null in real mode or if timeControl is disabled.
+   * Provides methods to control and advance time during tests.
+   */
+  time: TimeContext | null;
 }
 
 export interface PollyTestOptions {
@@ -62,6 +69,18 @@ export interface PollyTestOptions {
    * Bun test options (timeout, skip, etc).
    */
   testOptions?: TestOptions;
+
+  /**
+   * Enable time control. When enabled in replay mode, time is frozen
+   * to the recording time (startedDateTime from HAR).
+   * @default false
+   */
+  timeControl?: boolean;
+
+  /**
+   * Options for time control behavior.
+   */
+  timeControlOptions?: TimeControlConfig;
 }
 
 // Snapshot manager instance (configured by createPollyTest)
@@ -180,6 +199,8 @@ export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptio
           recordingsDir,
           headersToRedact: globalOptions.headersToRedact,
           bodyNormalizer: globalOptions.bodyNormalizer,
+          timeControl: globalOptions.timeControl,
+          timeControlOptions: globalOptions.timeControlOptions,
         });
 
         await recorder.start();
@@ -199,6 +220,7 @@ export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptio
           loadSnapshot: async <T = unknown>() => {
             return snapshotManager.load<T>(snapshotName);
           },
+          time: recorder.getTimeContext(),
         };
 
         try {
@@ -260,6 +282,8 @@ export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptio
           recordingsDir,
           headersToRedact: globalOptions.headersToRedact,
           bodyNormalizer: globalOptions.bodyNormalizer,
+          timeControl: globalOptions.timeControl,
+          timeControlOptions: globalOptions.timeControlOptions,
         });
 
         await recorder.start();
@@ -279,6 +303,7 @@ export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptio
           loadSnapshot: async <T = unknown>() => {
             return snapshotManager.load<T>(snapshotName);
           },
+          time: recorder.getTimeContext(),
         };
 
         try {

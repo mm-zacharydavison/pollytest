@@ -21,7 +21,7 @@
     "examples"
   ],
   "scripts": {
-    "build": "bun build ./src/index.ts ./src/runner.ts ./src/cli.ts --outdir ./dist --target node --external @pollyjs/core --external @pollyjs/adapter-fetch --external @pollyjs/persister-fs && tsc --emitDeclarationOnly",
+    "build": "bun build ./src/index.ts ./src/runner.ts ./src/cli.ts --outdir ./dist --target node --external @pollyjs/core --external @pollyjs/adapter-fetch --external @pollyjs/persister-fs --external @sinonjs/fake-timers && tsc --emitDeclarationOnly",
     "prepublishOnly": "bun run build",
     "clean": "rm -rf dist",
     "pollytest": "bun ./src/cli.ts"
@@ -48,10 +48,12 @@
   "dependencies": {
     "@pollyjs/adapter-fetch": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
-    "@pollyjs/persister-fs": "^6.0.6"
+    "@pollyjs/persister-fs": "^6.0.6",
+    "@sinonjs/fake-timers": "^13.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",
+    "@types/sinonjs__fake-timers": "^8.1.5",
     "typescript": "^5.7.2"
   },
   "peerDependencies": {

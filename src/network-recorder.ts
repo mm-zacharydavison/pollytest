@@ -2,10 +2,33 @@ import { Polly, type PollyConfig } from '@pollyjs/core';
 import FetchAdapter from '@pollyjs/adapter-fetch';
 import FSPersister from '@pollyjs/persister-fs';
 import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { TimeController, type TimeControlConfig, type TimeContext } from './time-controller';
 
 // Extend PollyConfig to include properties missing from types
 interface ExtendedPollyConfig extends PollyConfig {
   recordingId?: string;
+}
+
+// HAR types for loading recordings
+interface HarEntry {
+  startedDateTime: string;
+  request: {
+    method: string;
+    url: string;
+  };
+  response: {
+    content: {
+      text?: string;
+    };
+  };
+}
+
+interface HarLog {
+  log: {
+    entries: HarEntry[];
+  };
 }
 
 // Register adapters once on module load
@@ -80,6 +103,18 @@ export interface NetworkRecorderOptions {
    * @default true
    */
   recordFailedRequests?: boolean;
+
+  /**
+   * Enable time control. When enabled in replay mode, time is frozen
+   * to the recording time (startedDateTime from HAR).
+   * @default false
+   */
+  timeControl?: boolean;
+
+  /**
+   * Options for time control behavior.
+   */
+  timeControlOptions?: TimeControlConfig;
 }
 
 const DEFAULT_HEADERS_TO_REDACT = [
@@ -112,6 +147,8 @@ const DEFAULT_HEADERS_TO_REDACT = [
  */
 export function setupNetworkRecorder(options: NetworkRecorderOptions) {
   let polly: Polly | null = null;
+  let timeController: TimeController | null = null;
+  let harEntries: HarEntry[] = [];
 
   const isRealMode = options.mode === 'record' || process.env.REAL_APIS === 'true';
   const mode: PollyConfig['mode'] = options.mode ?? (isRealMode ? 'record' : 'replay');
@@ -119,6 +156,33 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
   const recordingsDir = options.recordingsDir;
   const headersToRedact = options.headersToRedact ?? DEFAULT_HEADERS_TO_REDACT;
   const bodyNormalizer = options.bodyNormalizer ?? defaultBodyNormalizer;
+
+  /**
+   * Load HAR file and return parsed content.
+   */
+  async function loadHar(recordingName: string): Promise<HarLog | null> {
+    const harPath = join(recordingsDir, recordingName, 'recording.har');
+
+    if (!existsSync(harPath)) {
+      return null;
+    }
+
+    try {
+      const content = await readFile(harPath, 'utf-8');
+      return JSON.parse(content) as HarLog;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Find the HAR entry that matches a given request.
+   */
+  function findEntryForRequest(method: string, url: string): HarEntry | undefined {
+    return harEntries.find(
+      (entry) => entry.request.method === method && entry.request.url === url
+    );
+  }
 
   return {
     /**
@@ -172,6 +236,35 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
         }
       });
 
+      // Set up time control in replay mode if enabled
+      if (options.timeControl && !isRealMode) {
+        // Use polly.recordingId which includes the hash suffix matching the actual directory
+        const har = await loadHar(polly.recordingId);
+
+        if (har?.log.entries.length) {
+          harEntries = har.log.entries;
+          const firstEntry = har.log.entries[0];
+
+          if (firstEntry?.startedDateTime) {
+            timeController = new TimeController(options.timeControlOptions);
+            timeController.install(firstEntry.startedDateTime);
+
+            // Hook into Polly to transform response timestamps
+            server.any().on('beforeResponse', (req, res) => {
+              if (timeController && res.body && typeof res.body === 'string') {
+                const entry = findEntryForRequest(req.method, req.url);
+                if (entry) {
+                  res.body = timeController.transformResponseTimestamps(
+                    res.body,
+                    new Date(entry.startedDateTime)
+                  );
+                }
+              }
+            });
+          }
+        }
+      }
+
       return polly;
     },
 
@@ -179,6 +272,13 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
      * Stop recording and flush to disk.
      */
     async stop() {
+      // Uninstall time controller first
+      if (timeController) {
+        timeController.uninstall();
+        timeController = null;
+      }
+      harEntries = [];
+
       if (polly) {
         await polly.flush();
         await polly.stop();
@@ -207,6 +307,14 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
      */
     getRecordingId() {
       return polly?.recordingId ?? null;
+    },
+
+    /**
+     * Get time context for controlling time in tests.
+     * Returns null in real mode or if time control is disabled.
+     */
+    getTimeContext(): TimeContext | null {
+      return timeController?.getContext() ?? null;
     },
   };
 }

@@ -18,3 +18,10 @@ export {
   type PollyTestContext,
   type PollyTestOptions,
 } from './polly-test';
+
+export {
+  TimeController,
+  parseDuration,
+  type TimeContext,
+  type TimeControlConfig,
+} from './time-controller';
