@@ -200,7 +200,8 @@ export function setupNetworkRecorder(options: NetworkRecorderOptions) {
           },
         },
         recordingId: options.recordingName,
-        recordIfMissing: false,
+        // In record mode, allow recording new requests. In replay mode, fail on missing recordings.
+        recordIfMissing: mode === 'record',
         matchRequestsBy: {
           headers: false,
           order: false,

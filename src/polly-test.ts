@@ -1,6 +1,6 @@
 import { test, type TestOptions } from 'bun:test';
 import { execSync } from 'node:child_process';
-import { join } from 'node:path';
+import { join, isAbsolute } from 'node:path';
 import { setupNetworkRecorder, type NetworkRecorderOptions } from './network-recorder';
 import { SnapshotManager } from './snapshot-manager';
 import type { TimeContext, TimeControlConfig } from './time-controller';
@@ -133,7 +133,9 @@ function getTestSuiteName(): string {
  */
 export function createPollyTest(globalOptions: Omit<PollyTestOptions, 'testOptions'>) {
   const gitRoot = getGitRoot();
-  const recordingsDir = join(gitRoot, globalOptions.recordingsDir);
+  const recordingsDir = isAbsolute(globalOptions.recordingsDir)
+    ? globalOptions.recordingsDir
+    : join(gitRoot, globalOptions.recordingsDir);
 
   // Configure snapshot manager - uses same directory as recordings
   snapshotManager = new SnapshotManager({ baseDir: recordingsDir });
